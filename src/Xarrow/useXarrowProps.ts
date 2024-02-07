@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from "react";
 import {
   anchorCustomPositionType,
   anchorType,
@@ -8,16 +8,17 @@ import {
   svgEdgeShapeType,
   svgElemType,
   xarrowPropsType,
-} from '../types';
-import { getElementByPropGiven, getElemPos, xStr2absRelative } from './utils';
-import _ from 'lodash';
-import { arrowShapes, cAnchorEdge, cArrowShapes } from '../constants';
-import { anchorEdgeType, dimensionType } from '../privateTypes';
+} from "../types";
+import { getElementByPropGiven, getElemPos, xStr2absRelative } from "./utils";
+import isEqual from "lodash/isEqual";
+import { arrowShapes, cAnchorEdge, cArrowShapes } from "../constants";
+import { anchorEdgeType, dimensionType } from "../privateTypes";
 
-const parseLabels = (label: xarrowPropsType['labels']): labelsType => {
+const parseLabels = (label: xarrowPropsType["labels"]): labelsType => {
   let parsedLabel = { start: null, middle: null, end: null };
   if (label) {
-    if (typeof label === 'string' || React.isValidElement(label)) parsedLabel.middle = label;
+    if (typeof label === "string" || React.isValidElement(label))
+      parsedLabel.middle = label;
     else {
       for (let key in label) {
         parsedLabel[key] = label[key];
@@ -28,8 +29,9 @@ const parseLabels = (label: xarrowPropsType['labels']): labelsType => {
 };
 
 // remove 'auto' as possible anchor from anchorCustomPositionType.position
-interface anchorCustomPositionType2 extends Omit<Required<anchorCustomPositionType>, 'position'> {
-  position: Exclude<typeof cAnchorEdge[number], 'auto'>;
+interface anchorCustomPositionType2
+  extends Omit<Required<anchorCustomPositionType>, "position"> {
+  position: Exclude<typeof cAnchorEdge[number], "auto">;
 }
 
 const parseAnchor = (anchor: anchorType) => {
@@ -38,37 +40,43 @@ const parseAnchor = (anchor: anchorType) => {
 
   //convert to array of objects
   let anchorChoice2 = anchorChoice.map((anchorChoice) => {
-    if (typeof anchorChoice === 'string') {
+    if (typeof anchorChoice === "string") {
       return { position: anchorChoice };
     } else return anchorChoice;
   });
 
   //remove any invalid anchor names
-  anchorChoice2 = anchorChoice2.filter((an) => cAnchorEdge.includes(an.position));
-  if (anchorChoice2.length == 0) anchorChoice2 = [{ position: 'auto' }];
+  anchorChoice2 = anchorChoice2.filter((an) =>
+    cAnchorEdge.includes(an.position)
+  );
+  if (anchorChoice2.length == 0) anchorChoice2 = [{ position: "auto" }];
 
   //replace any 'auto' with ['left','right','bottom','top']
-  let autosAncs = anchorChoice2.filter((an) => an.position === 'auto');
+  let autosAncs = anchorChoice2.filter((an) => an.position === "auto");
   if (autosAncs.length > 0) {
-    anchorChoice2 = anchorChoice2.filter((an) => an.position !== 'auto');
+    anchorChoice2 = anchorChoice2.filter((an) => an.position !== "auto");
     anchorChoice2.push(
       ...autosAncs.flatMap((anchorObj) => {
-        return (['left', 'right', 'top', 'bottom'] as anchorEdgeType[]).map((anchorName) => {
-          return { ...anchorObj, position: anchorName };
-        });
+        return (["left", "right", "top", "bottom"] as anchorEdgeType[]).map(
+          (anchorName) => {
+            return { ...anchorObj, position: anchorName };
+          }
+        );
       })
     );
   }
 
   // default values
   let anchorChoice3 = anchorChoice2.map((anchorChoice) => {
-    if (typeof anchorChoice === 'object') {
+    if (typeof anchorChoice === "object") {
       let anchorChoiceCustom = anchorChoice as anchorCustomPositionType;
-      if (!anchorChoiceCustom.position) anchorChoiceCustom.position = 'auto';
-      if (!anchorChoiceCustom.offset) anchorChoiceCustom.offset = { x: 0, y: 0 };
+      if (!anchorChoiceCustom.position) anchorChoiceCustom.position = "auto";
+      if (!anchorChoiceCustom.offset)
+        anchorChoiceCustom.offset = { x: 0, y: 0 };
       if (!anchorChoiceCustom.offset.y) anchorChoiceCustom.offset.y = 0;
       if (!anchorChoiceCustom.offset.x) anchorChoiceCustom.offset.x = 0;
-      anchorChoiceCustom = anchorChoiceCustom as Required<anchorCustomPositionType>;
+      anchorChoiceCustom =
+        anchorChoiceCustom as Required<anchorCustomPositionType>;
       return anchorChoiceCustom;
     } else return anchorChoice;
   }) as Required<anchorCustomPositionType>[];
@@ -81,16 +89,21 @@ const parseDashness = (dashness, props) => {
     dashNone = 0,
     animDashSpeed,
     animDirection = 1;
-  if (typeof dashness === 'object') {
+  if (typeof dashness === "object") {
     dashStroke = dashness.strokeLen || props.strokeWidth * 2;
     dashNone = dashness.strokeLen ? dashness.nonStrokeLen : props.strokeWidth;
     animDashSpeed = dashness.animation ? dashness.animation : null;
-  } else if (typeof dashness === 'boolean' && dashness) {
+  } else if (typeof dashness === "boolean" && dashness) {
     dashStroke = props.strokeWidth * 2;
     dashNone = props.strokeWidth;
     animDashSpeed = null;
   }
-  return { strokeLen: dashStroke, nonStrokeLen: dashNone, animation: animDashSpeed, animDirection } as {
+  return {
+    strokeLen: dashStroke,
+    nonStrokeLen: dashNone,
+    animation: animDashSpeed,
+    animDirection,
+  } as {
     strokeLen: number;
     nonStrokeLen: number;
     animation: number;
@@ -98,24 +111,27 @@ const parseDashness = (dashness, props) => {
 };
 
 const parseEdgeShape = (svgEdge): svgCustomEdgeType => {
-  if (typeof svgEdge == 'string') {
-    if (svgEdge in arrowShapes) svgEdge = arrowShapes[svgEdge as svgEdgeShapeType];
+  if (typeof svgEdge == "string") {
+    if (svgEdge in arrowShapes)
+      svgEdge = arrowShapes[svgEdge as svgEdgeShapeType];
     else {
       console.warn(
         `'${svgEdge}' is not supported arrow shape. the supported arrow shapes is one of ${cArrowShapes}.
            reverting to default shape.`
       );
-      svgEdge = arrowShapes['arrow1'];
+      svgEdge = arrowShapes["arrow1"];
     }
   }
   svgEdge = svgEdge as svgCustomEdgeType;
   if (svgEdge?.offsetForward === undefined) svgEdge.offsetForward = 0.25;
-  if (svgEdge?.svgElem === undefined) svgEdge.svgElem = 'path';
+  if (svgEdge?.svgElem === undefined) svgEdge.svgElem = "path";
   // if (svgEdge?.svgProps === undefined) svgEdge.svgProps = arrowShapes.arrow1.svgProps;
   return svgEdge;
 };
 
-const parseGridBreak = (gridBreak: string): { relative: number; abs: number } => {
+const parseGridBreak = (
+  gridBreak: string
+): { relative: number; abs: number } => {
   let resGridBreak = xStr2absRelative(gridBreak);
   if (!resGridBreak) resGridBreak = { relative: 0.5, abs: 0 };
   return resGridBreak;
@@ -132,50 +148,56 @@ const withUpdate = (propVal, updateRef) => {
 };
 
 const noParse = (userProp) => userProp;
-const noParseWithUpdatePos = (userProp, _, updatePos) => withUpdate(userProp, updatePos);
-const parseNumWithUpdatePos = (userProp, _, updatePos) => withUpdate(Number(userProp), updatePos);
+const noParseWithUpdatePos = (userProp, _, updatePos) =>
+  withUpdate(userProp, updatePos);
+const parseNumWithUpdatePos = (userProp, _, updatePos) =>
+  withUpdate(Number(userProp), updatePos);
 const parseNum = (userProp) => Number(userProp);
 
-const parsePropsFuncs: Required<{ [key in keyof xarrowPropsType]: Function }> = {
-  start: (userProp) => getElementByPropGiven(userProp),
-  end: (userProp) => getElementByPropGiven(userProp),
-  startAnchor: (userProp, _, updatePos) => withUpdate(parseAnchor(userProp), updatePos),
-  endAnchor: (userProp, _, updatePos) => withUpdate(parseAnchor(userProp), updatePos),
-  labels: (userProp) => parseLabels(userProp),
-  color: noParse,
-  lineColor: (userProp, propsRefs) => userProp || propsRefs.color,
-  headColor: (userProp, propsRefs) => userProp || propsRefs.color,
-  tailColor: (userProp, propsRefs) => userProp || propsRefs.color,
-  strokeWidth: parseNumWithUpdatePos,
-  showHead: noParseWithUpdatePos,
-  headSize: parseNumWithUpdatePos,
-  showTail: noParseWithUpdatePos,
-  tailSize: parseNumWithUpdatePos,
-  path: noParseWithUpdatePos,
-  curveness: parseNumWithUpdatePos,
-  gridBreak: (userProp, _, updatePos) => withUpdate(parseGridBreak(userProp), updatePos),
-  // // gridRadius = strokeWidth * 2, //todo
-  dashness: (userProp, propsRefs) => parseDashness(userProp, propsRefs),
-  headShape: (userProp) => parseEdgeShape(userProp),
-  tailShape: (userProp) => parseEdgeShape(userProp),
-  showXarrow: noParse,
-  animateDrawing: noParse,
-  zIndex: parseNum,
-  passProps: noParse,
-  arrowBodyProps: noParseWithUpdatePos,
-  arrowHeadProps: noParseWithUpdatePos,
-  arrowTailProps: noParseWithUpdatePos,
-  SVGcanvasProps: noParseWithUpdatePos,
-  divContainerProps: noParseWithUpdatePos,
-  divContainerStyle: noParseWithUpdatePos,
-  SVGcanvasStyle: noParseWithUpdatePos,
-  _extendSVGcanvas: noParseWithUpdatePos,
-  _debug: noParseWithUpdatePos,
-  _cpx1Offset: noParseWithUpdatePos,
-  _cpy1Offset: noParseWithUpdatePos,
-  _cpx2Offset: noParseWithUpdatePos,
-  _cpy2Offset: noParseWithUpdatePos,
-};
+const parsePropsFuncs: Required<{ [key in keyof xarrowPropsType]: Function }> =
+  {
+    start: (userProp) => getElementByPropGiven(userProp),
+    end: (userProp) => getElementByPropGiven(userProp),
+    startAnchor: (userProp, _, updatePos) =>
+      withUpdate(parseAnchor(userProp), updatePos),
+    endAnchor: (userProp, _, updatePos) =>
+      withUpdate(parseAnchor(userProp), updatePos),
+    labels: (userProp) => parseLabels(userProp),
+    color: noParse,
+    lineColor: (userProp, propsRefs) => userProp || propsRefs.color,
+    headColor: (userProp, propsRefs) => userProp || propsRefs.color,
+    tailColor: (userProp, propsRefs) => userProp || propsRefs.color,
+    strokeWidth: parseNumWithUpdatePos,
+    showHead: noParseWithUpdatePos,
+    headSize: parseNumWithUpdatePos,
+    showTail: noParseWithUpdatePos,
+    tailSize: parseNumWithUpdatePos,
+    path: noParseWithUpdatePos,
+    curveness: parseNumWithUpdatePos,
+    gridBreak: (userProp, _, updatePos) =>
+      withUpdate(parseGridBreak(userProp), updatePos),
+    // // gridRadius = strokeWidth * 2, //todo
+    dashness: (userProp, propsRefs) => parseDashness(userProp, propsRefs),
+    headShape: (userProp) => parseEdgeShape(userProp),
+    tailShape: (userProp) => parseEdgeShape(userProp),
+    showXarrow: noParse,
+    animateDrawing: noParse,
+    zIndex: parseNum,
+    passProps: noParse,
+    arrowBodyProps: noParseWithUpdatePos,
+    arrowHeadProps: noParseWithUpdatePos,
+    arrowTailProps: noParseWithUpdatePos,
+    SVGcanvasProps: noParseWithUpdatePos,
+    divContainerProps: noParseWithUpdatePos,
+    divContainerStyle: noParseWithUpdatePos,
+    SVGcanvasStyle: noParseWithUpdatePos,
+    _extendSVGcanvas: noParseWithUpdatePos,
+    _debug: noParseWithUpdatePos,
+    _cpx1Offset: noParseWithUpdatePos,
+    _cpy1Offset: noParseWithUpdatePos,
+    _cpx2Offset: noParseWithUpdatePos,
+    _cpy2Offset: noParseWithUpdatePos,
+  };
 
 //build dependencies
 const propsDeps = {};
@@ -184,8 +206,8 @@ for (let propName in parsePropsFuncs) {
   propsDeps[propName] = [propName];
 }
 // 'lineColor', 'headColor', 'tailColor' props also depends on 'color' prop
-for (let propName of ['lineColor', 'headColor', 'tailColor']) {
-  propsDeps[propName].push('color');
+for (let propName of ["lineColor", "headColor", "tailColor"]) {
+  propsDeps[propName].push("color");
 }
 
 const parseGivenProps = (props: xarrowPropsType, propsRef) => {
@@ -198,10 +220,10 @@ const parseGivenProps = (props: xarrowPropsType, propsRef) => {
 const defaultProps: Required<xarrowPropsType> = {
   start: null,
   end: null,
-  startAnchor: 'auto',
-  endAnchor: 'auto',
+  startAnchor: "auto",
+  endAnchor: "auto",
   labels: null,
-  color: 'CornflowerBlue',
+  color: "CornflowerBlue",
   lineColor: null,
   headColor: null,
   tailColor: null,
@@ -210,13 +232,13 @@ const defaultProps: Required<xarrowPropsType> = {
   headSize: 6,
   showTail: false,
   tailSize: 6,
-  path: 'smooth',
+  path: "smooth",
   curveness: 0.8,
-  gridBreak: '50%',
+  gridBreak: "50%",
   // gridRadius : strokeWidth * 2, //todo
   dashness: false,
-  headShape: 'arrow1',
-  tailShape: 'arrow1',
+  headShape: "arrow1",
+  tailShape: "arrow1",
   showXarrow: true,
   animateDrawing: false,
   zIndex: 0,
@@ -293,7 +315,7 @@ const initialValVars = {
 // const parseAllProps = () => parseGivenProps(defaultProps, initialParsedProps);
 
 function deepCompareEquals(a, b) {
-  return _.isEqual(a, b);
+  return isEqual(a, b);
 }
 
 function useDeepCompareMemoize(value) {
@@ -317,13 +339,16 @@ function useDeepCompareEffect(callback, dependencies) {
  */
 const useXarrowProps = (
   userProps: xarrowPropsType,
-  refs: { headRef: React.MutableRefObject<any>; tailRef: React.MutableRefObject<any> }
+  refs: {
+    headRef: React.MutableRefObject<any>;
+    tailRef: React.MutableRefObject<any>;
+  }
 ) => {
   const [propsRefs, setPropsRefs] = useState(initialParsedProps);
   const shouldUpdatePosition = useRef(false);
   // const _propsRefs = useRef(initialParsedProps);
   // const propsRefs = _propsRefs.current;
-  propsRefs['shouldUpdatePosition'] = shouldUpdatePosition;
+  propsRefs["shouldUpdatePosition"] = shouldUpdatePosition;
   const curProps = { ...defaultProps, ...userProps };
 
   // react states the number of hooks per render must stay constant,
@@ -337,7 +362,11 @@ const useXarrowProps = (
   for (let propName in defaultProps) {
     useLayoutEffect(
       () => {
-        propsRefs[propName] = parsePropsFuncs?.[propName]?.(curProps[propName], propsRefs, shouldUpdatePosition);
+        propsRefs[propName] = parsePropsFuncs?.[propName]?.(
+          curProps[propName],
+          propsRefs,
+          shouldUpdatePosition
+        );
         // console.log('prop update:', propName, 'with value', propsRefs[propName]);
         setPropsRefs({ ...propsRefs });
       },

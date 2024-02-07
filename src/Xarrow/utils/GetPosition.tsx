@@ -1,16 +1,19 @@
-import { useXarrowPropsResType } from '../useXarrowProps';
-import React from 'react';
-import { calcAnchors } from '../anchors';
-import { getShortestLine, getSvgPos } from './index';
-import _ from 'lodash';
-import { cPaths } from '../../constants';
-import { buzzierMinSols, bzFunction } from './buzzier';
+import { useXarrowPropsResType } from "../useXarrowProps";
+import React from "react";
+import { calcAnchors } from "../anchors";
+import { getShortestLine, getSvgPos } from "./index";
+import pick from "lodash/pick";
+import { cPaths } from "../../constants";
+import { buzzierMinSols, bzFunction } from "./buzzier";
 
 /**
  * The Main logic of path calculation for the arrow.
  * calculate new path, adjusting canvas, and set state based on given properties.
  * */
-export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.MutableRefObject<any>) => {
+export const getPosition = (
+  xProps: useXarrowPropsResType,
+  mainRef: React.MutableRefObject<any>
+) => {
   let [propsRefs, valVars] = xProps;
   let {
     startAnchor,
@@ -46,8 +49,8 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
 
   let startAnchorPosition = chosenStart.anchor.position,
     endAnchorPosition = chosenEnd.anchor.position;
-  let startPoint = _.pick(chosenStart, ['x', 'y']),
-    endPoint = _.pick(chosenEnd, ['x', 'y']);
+  let startPoint = pick(chosenStart, ["x", "y"]),
+    endPoint = pick(chosenEnd, ["x", "y"]);
 
   let mainDivPos = getSvgPos(svgRef);
   let cx0 = Math.min(startPoint.x, endPoint.x) - mainDivPos.x;
@@ -58,7 +61,10 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
   let absDy = Math.abs(endPoint.y - startPoint.y);
   let xSign = dx > 0 ? 1 : -1;
   let ySign = dy > 0 ? 1 : -1;
-  let [headOffset, tailOffset] = [headShape.offsetForward, tailShape.offsetForward];
+  let [headOffset, tailOffset] = [
+    headShape.offsetForward,
+    tailShape.offsetForward,
+  ];
   let fHeadSize = headSize * strokeWidth; //factored head size
   let fTailSize = tailSize * strokeWidth; //factored head size
 
@@ -73,10 +79,10 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
 
   let cu = Number(curveness);
   // gridRadius = Number(gridRadius);
-  if (!cPaths.includes(path)) path = 'smooth';
-  if (path === 'straight') {
+  if (!cPaths.includes(path)) path = "smooth";
+  if (path === "straight") {
     cu = 0;
-    path = 'smooth';
+    path = "smooth";
   }
 
   let biggerSide = headSize > tailSize ? headSize : tailSize;
@@ -112,8 +118,12 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
 
       headAngel *= ySign;
       if (xSign < 0) headAngel = (Math.PI - headAngel * xSign) * xSign;
-      xHeadOffset = Math.cos(headAngel) * _headOffset - (Math.sin(headAngel) * fHeadSize) / 2;
-      yHeadOffset = (Math.cos(headAngel) * fHeadSize) / 2 + Math.sin(headAngel) * _headOffset;
+      xHeadOffset =
+        Math.cos(headAngel) * _headOffset -
+        (Math.sin(headAngel) * fHeadSize) / 2;
+      yHeadOffset =
+        (Math.cos(headAngel) * fHeadSize) / 2 +
+        Math.sin(headAngel) * _headOffset;
       headOrient = (headAngel * 180) / Math.PI;
     }
 
@@ -123,37 +133,41 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
       y1 += fTailSize * (1 - tailOffset) * ySign * Math.sin(tailAngel);
       tailAngel *= -ySign;
       if (xSign > 0) tailAngel = (Math.PI - tailAngel * xSign) * xSign;
-      xTailOffset = Math.cos(tailAngel) * _tailOffset - (Math.sin(tailAngel) * fTailSize) / 2;
-      yTailOffset = (Math.cos(tailAngel) * fTailSize) / 2 + Math.sin(tailAngel) * _tailOffset;
+      xTailOffset =
+        Math.cos(tailAngel) * _tailOffset -
+        (Math.sin(tailAngel) * fTailSize) / 2;
+      yTailOffset =
+        (Math.cos(tailAngel) * fTailSize) / 2 +
+        Math.sin(tailAngel) * _tailOffset;
       tailOrient = (tailAngel * 180) / Math.PI;
     }
   } else {
     // in case of smooth path
-    if (endAnchorPosition === 'middle') {
+    if (endAnchorPosition === "middle") {
       // in case a middle anchor is chosen for endAnchor choose from which side to attach to the middle of the element
       if (absDx > absDy) {
-        endAnchorPosition = xSign ? 'left' : 'right';
+        endAnchorPosition = xSign ? "left" : "right";
       } else {
-        endAnchorPosition = ySign ? 'top' : 'bottom';
+        endAnchorPosition = ySign ? "top" : "bottom";
       }
     }
     if (showHead) {
-      if (['left', 'right'].includes(endAnchorPosition)) {
+      if (["left", "right"].includes(endAnchorPosition)) {
         xHeadOffset += _headOffset * xSign;
         x2 -= fHeadSize * (1 - headOffset) * xSign; //same!
         yHeadOffset += (fHeadSize * xSign) / 2;
-        if (endAnchorPosition === 'left') {
+        if (endAnchorPosition === "left") {
           headOrient = 0;
           if (xSign < 0) headOrient += 180;
         } else {
           headOrient = 180;
           if (xSign > 0) headOrient += 180;
         }
-      } else if (['top', 'bottom'].includes(endAnchorPosition)) {
+      } else if (["top", "bottom"].includes(endAnchorPosition)) {
         xHeadOffset += (fHeadSize * -ySign) / 2;
         yHeadOffset += _headOffset * ySign;
         y2 -= fHeadSize * ySign - yHeadOffset;
-        if (endAnchorPosition === 'top') {
+        if (endAnchorPosition === "top") {
           headOrient = 270;
           if (ySign > 0) headOrient += 180;
         } else {
@@ -165,22 +179,22 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
   }
 
   if (showTail && cu !== 0) {
-    if (['left', 'right'].includes(startAnchorPosition)) {
+    if (["left", "right"].includes(startAnchorPosition)) {
       xTailOffset += _tailOffset * -xSign;
       x1 += fTailSize * xSign + xTailOffset;
       yTailOffset += -(fTailSize * xSign) / 2;
-      if (startAnchorPosition === 'left') {
+      if (startAnchorPosition === "left") {
         tailOrient = 180;
         if (xSign < 0) tailOrient += 180;
       } else {
         tailOrient = 0;
         if (xSign > 0) tailOrient += 180;
       }
-    } else if (['top', 'bottom'].includes(startAnchorPosition)) {
+    } else if (["top", "bottom"].includes(startAnchorPosition)) {
       yTailOffset += _tailOffset * -ySign;
       y1 += fTailSize * ySign + yTailOffset;
       xTailOffset += (fTailSize * ySign) / 2;
-      if (startAnchorPosition === 'top') {
+      if (startAnchorPosition === "top") {
         tailOrient = 90;
         if (ySign > 0) tailOrient += 180;
       } else {
@@ -199,7 +213,7 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
     cpy2 = y2;
 
   let curvesPossibilities = {};
-  if (path === 'smooth')
+  if (path === "smooth")
     curvesPossibilities = {
       hh: () => {
         //horizontal - from right to left or the opposite
@@ -224,7 +238,7 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
         cpx2 -= absDx * cu * xSign;
       },
     };
-  else if (path === 'grid') {
+  else if (path === "grid") {
     curvesPossibilities = {
       hh: () => {
         cpx1 += (absDx * gridBreak.relative + gridBreak.abs) * xSign;
@@ -259,15 +273,17 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
     };
   }
   // smart select best curve for the current anchors
-  let selectedCurviness = '';
-  if (['left', 'right'].includes(startAnchorPosition)) selectedCurviness += 'h';
-  else if (['bottom', 'top'].includes(startAnchorPosition)) selectedCurviness += 'v';
-  else if (startAnchorPosition === 'middle') selectedCurviness += 'm';
-  if (['left', 'right'].includes(endAnchorPosition)) selectedCurviness += 'h';
-  else if (['bottom', 'top'].includes(endAnchorPosition)) selectedCurviness += 'v';
-  else if (endAnchorPosition === 'middle') selectedCurviness += 'm';
-  if (absDx > absDy) selectedCurviness = selectedCurviness.replace(/m/g, 'h');
-  else selectedCurviness = selectedCurviness.replace(/m/g, 'v');
+  let selectedCurviness = "";
+  if (["left", "right"].includes(startAnchorPosition)) selectedCurviness += "h";
+  else if (["bottom", "top"].includes(startAnchorPosition))
+    selectedCurviness += "v";
+  else if (startAnchorPosition === "middle") selectedCurviness += "m";
+  if (["left", "right"].includes(endAnchorPosition)) selectedCurviness += "h";
+  else if (["bottom", "top"].includes(endAnchorPosition))
+    selectedCurviness += "v";
+  else if (endAnchorPosition === "middle") selectedCurviness += "m";
+  if (absDx > absDy) selectedCurviness = selectedCurviness.replace(/m/g, "h");
+  else selectedCurviness = selectedCurviness.replace(/m/g, "v");
   curvesPossibilities[selectedCurviness]();
 
   cpx1 += _cpx1Offset;
@@ -284,7 +300,7 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
   if (ySol1 < 0) excUp += -ySol1;
   if (ySol2 > absDy) excDown += ySol2 - absDy;
 
-  if (path === 'grid') {
+  if (path === "grid") {
     excLeft += _calc;
     excRight += _calc;
     excUp += _calc;
@@ -313,12 +329,13 @@ export const getPosition = (xProps: useXarrowPropsResType, mainRef: React.Mutabl
   const labelEndPos = { x: bzx(0.99), y: bzy(0.99) };
 
   let arrowPath;
-  if (path === 'grid') {
+  if (path === "grid") {
     // todo: support gridRadius
     //  arrowPath = `M ${x1} ${y1} L  ${cpx1 - 10} ${cpy1} a10,10 0 0 1 10,10
     // L ${cpx2} ${cpy2 - 10} a10,10 0 0 0 10,10 L  ${x2} ${y2}`;
     arrowPath = `M ${x1} ${y1} L  ${cpx1} ${cpy1} L ${cpx2} ${cpy2} ${x2} ${y2}`;
-  } else if (path === 'smooth') arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
+  } else if (path === "smooth")
+    arrowPath = `M ${x1} ${y1} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${x2} ${y2}`;
   return {
     cx0,
     cy0,
